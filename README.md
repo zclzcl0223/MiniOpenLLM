@@ -1,5 +1,5 @@
 # MiniOpenLLM: GPT-2, DeepSeek-V3...
-Simple implementation of some classic open source LLM models, including:
+Simple implementation of some open source LLMs, including:
 - **GPT-2**
 - **Qwen-2**
 - **DeepSeek-V3** (only the structure, i.e., MLA and MoE. MTP or other training tricks are not implemented.)
