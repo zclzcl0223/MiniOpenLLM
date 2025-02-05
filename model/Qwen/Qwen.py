@@ -17,7 +17,7 @@ def precompute_freqs_cis(config):
     freqs_cis = torch.polar(torch.ones_like(freqs), freqs)
     return freqs_cis
 
-def Qwen_apply_rope(x, freqs_cis, kv_group):
+def Qwen_apply_rope(x, freqs_cis):
     dtype = x.dtype
     B, T, n_head, head_dim = x.shape
     # (B, T, n_head, head_dim) -> (B, T, n_head, head_dim//2, 2) -> (B, T, n_head, head_dim//2) (complex form)
@@ -25,9 +25,14 @@ def Qwen_apply_rope(x, freqs_cis, kv_group):
     # (T, head_dim//2) (complex) -> (1, T, 1, head_dim//2) (complex form)
     freqs_cis = freqs_cis.view(1, T, 1, x.shape[-1])
     # (B, T, n_head, head_dim//2) -> (B, T, n_head, head_dim//2, 2) -> (B, T, n_head, head_dim)
-    y = torch.view_as_real(x * freqs_cis).flatten(3).unsqueeze(-2).expand(B, T, n_head, kv_group, head_dim)
-    y = y.reshape(B, T, n_head * kv_group, head_dim)
+    y = torch.view_as_real(x * freqs_cis).flatten(3)
     return y.to(dtype)
+
+def repeated_kv(x, kv_group):
+    B, T, n_head, head_dim = x.shape
+    x = x.unsqueeze(-2).expand(B, T, n_head, kv_group, head_dim)
+    x = x.reshape(B, T, n_head * kv_group, head_dim)
+    return x
 
 class RMSNorm(nn.Module):
     
@@ -60,13 +65,15 @@ class QwenGroupedQueryAttention(nn.Module):
         B, T, hidden = x.shape
         q, k, v = self.c_attn(x).split([self.q_dim, self.kv_dim, self.kv_dim], dim=-1)
 
-        q = q.view(B, T, self.n_q_head, self.head_dim).transpose(1, 2)
+        q = q.view(B, T, self.n_q_head, self.head_dim)
         k = k.view(B, T, self.n_kv_head, self.head_dim)
         v = v.view(B, T, self.n_kv_head, self.head_dim)
 
         # apply rope
-        k = Qwen_apply_rope(k, freqs_cis, self.kv_group).transpose(1, 2)
-        v = Qwen_apply_rope(v, freqs_cis, self.kv_group).transpose(1, 2)
+        q = Qwen_apply_rope(q, freqs_cis).transpose(1, 2)
+        k = Qwen_apply_rope(k, freqs_cis)
+        k = repeated_kv(k, self.kv_group).transpose(1, 2)
+        v = repeated_kv(v, self.kv_group).transpose(1, 2)
 
         # FlashAttention
         y = F.scaled_dot_product_attention(q, k, v, is_causal=True)
