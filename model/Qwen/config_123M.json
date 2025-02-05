@@ -1,0 +1,14 @@
+{
+    "block_size": 1024,
+    "vocab_size": 50304,
+    "n_layer": 10,
+    "n_head": 12,
+    "kv_group": 6 ,
+    "n_embd": 768,
+    "base": 10000.0,
+    "batch_size": 32,
+    "token_per_epoch": 524288,
+    "max_lr": 1e-3,
+    "warmup_steps": 715,
+    "max_steps": 19073
+  }

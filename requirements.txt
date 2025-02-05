@@ -1,0 +1,17 @@
+tqdm
+datasets
+tiktoken
+matplotlib
+torch==2.5.1
+transformers==4.46.3
+safetensors==0.4.5
+
+#python_dateutil
+#flash_attn
+
+# math_eval
+#sympy==1.12
+#antlr4-python3-runtime==4.11.1 # ! The version needs to be compatible with sympy.
+#word2number
+#Pebble
+#timeout-decorator
