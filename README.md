@@ -5,6 +5,7 @@ Simple implementation of some open source LLMs, including:
 - **DeepSeek-V3** (only the structure, i.e., MLA and MoE. MTP or other training tricks are not implemented.)
 - developing...
 
+![fig](fig/loss_all.png)
 
 > Star it if you find this repo useful!
 
