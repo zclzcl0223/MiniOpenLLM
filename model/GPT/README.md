@@ -1,1 +1,1 @@
-![model](fig/gpt.png)
+![model](/fig/gpt.png)

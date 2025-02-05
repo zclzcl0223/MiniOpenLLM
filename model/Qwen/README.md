@@ -1,1 +1,1 @@
-![model](fig/qwen.png)
+![model](/fig/qwen.png)

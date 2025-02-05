@@ -1,1 +1,1 @@
-![model](fig/deepseek.png)
+![model](/fig/deepseek.png)
