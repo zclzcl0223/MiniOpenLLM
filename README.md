@@ -7,7 +7,7 @@ Simple implementation of some open source LLMs, including:
 
 ![fig](fig/loss_all.png)
 
-> Star it if you find this repo useful!
+> **Star it if you find this repo useful!**
 
 # Requirements
 Install the required packages with the following command:

@@ -87,7 +87,7 @@ for model_type in models:
         plt.ylabel("accuracy")
         plt.legend()
         plt.title("HellaSwag eval")
-        print("Max Hellaswag eval:", max(ys))
+        print("Max Hellaswag eval:", max(ys), "\n")
         plt.savefig(f'log/{model_type}/loss_{param_count}.png')
         plt.clf()
 
@@ -130,7 +130,7 @@ for model_type in models:
         plt.xlabel("steps")
         plt.ylabel("loss")
         plt.yscale('log')
-        plt.ylim(top=6.0)
+        plt.ylim(top=4.0)
         plt.legend()
         plt.title("Loss")
 

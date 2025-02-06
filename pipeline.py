@@ -5,6 +5,8 @@ import tiktoken
 import time
 import os
 import json
+import warnings
+warnings.filterwarnings('ignore')
 import torch.distributed as dist
 import torch.nn as nn
 from torch.nn import functional as F
@@ -111,7 +113,8 @@ def main(model, config):
     # train from scratch or checkpoint
     resume_from_checkpoint = config.resume_from_checkpoint
     if resume_from_checkpoint:
-        checkpoint_files = [f for f in os.listdir(log_dir) if f.startswith("model_") and f.endswith(".pt")]
+        checkpoint_files = [f for f in os.listdir(log_dir) if f.startswith(f"model_{config.config_path.split('_')[1]}") 
+                            and f.endswith(".pt")]
         assert len(checkpoint_files) > 0, "no checkpoints found"
         latest_checkpoint = sorted(checkpoint_files)[-1] # load the latest checkpoint
         checkpoint_path = os.path.join(log_dir, latest_checkpoint)
@@ -119,6 +122,7 @@ def main(model, config):
         # load model
         model = model(checkpoint['config'], process_rank=ddp_rank)
         total_params = sum(p.numel() for p in model.parameters()) / 1e6
+        log_file = os.path.join(log_dir, f"log_{total_params:.0f}M.txt")
         model.to(device)
         model.load_state_dict(checkpoint['model'])
         # load optimizer
@@ -333,6 +337,7 @@ if __name__ == '__main__':
         config = json.load(f)
     # config[key] -> config.key
     config = SimpleNamespace(**config)
+    config.config_path = args.config_path
     config.model_type = args.model_type
     config.use_compile = args.use_compile
     config.auxiliary_loss = args.auxiliary_loss
