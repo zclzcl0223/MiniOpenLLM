@@ -21,12 +21,13 @@ def Qwen_apply_rope(x, freqs_cis):
     dtype = x.dtype
     B, T, n_head, head_dim = x.shape
     # (B, T, n_head, head_dim) -> (B, T, n_head, head_dim//2, 2) -> (B, T, n_head, head_dim//2) (complex form)
-    x = torch.view_as_complex(x.float().view(B, T, n_head, -1, 2))
+    # to align with the rope form of Qwen, who treats (x[0], x[d//2]) as (x, y) which the vanilla rope treat (x[0], x[1]) as (x, y)
+    x = torch.view_as_complex(x.float().view(B, T, n_head, 2, -1).transpose(3, 4).contiguous())
     # (T, head_dim//2) (complex) -> (1, T, 1, head_dim//2) (complex form)
     freqs_cis = freqs_cis.view(1, T, 1, x.shape[-1])
     # (B, T, n_head, head_dim//2) -> (B, T, n_head, head_dim//2, 2) -> (B, T, n_head, head_dim)
-    y = torch.view_as_real(x * freqs_cis).flatten(3)
-    return y.to(dtype)
+    y = torch.view_as_real(x * freqs_cis).transpose(3, 4).flatten(3)
+    return y.contiguous().to(dtype)
 
 def repeated_kv(x, kv_group):
     B, T, n_head, head_dim = x.shape
@@ -58,13 +59,20 @@ class QwenGroupedQueryAttention(nn.Module):
         self.q_dim = config.n_embd
         self.kv_dim = self.n_kv_head * self.head_dim
 
-        self.c_attn = nn.Linear(config.n_embd, self.q_dim + 2 * self.kv_dim)
-        self.c_proj = nn.Linear(config.n_embd, config.n_embd, bias=False)
+        self.q_proj = nn.Linear(config.n_embd, self.q_dim)
+        self.k_proj = nn.Linear(config.n_embd, self.kv_dim)
+        self.v_proj = nn.Linear(config.n_embd, self.kv_dim)
+        self.o_proj = nn.Linear(config.n_embd, config.n_embd, bias=False)
+        #self.c_attn = nn.Linear(config.n_embd, self.q_dim + 2 * self.kv_dim)
+        #self.c_proj = nn.Linear(config.n_embd, config.n_embd, bias=False)
     
     def forward(self, x, freqs_cis):
         B, T, hidden = x.shape
-        q, k, v = self.c_attn(x).split([self.q_dim, self.kv_dim, self.kv_dim], dim=-1)
-
+        #q, k, v = self.c_attn(x).split([self.q_dim, self.kv_dim, self.kv_dim], dim=-1)
+        q = self.q_proj(x)
+        k = self.k_proj(x)
+        v = self.v_proj(x)
+        
         q = q.view(B, T, self.n_q_head, self.head_dim)
         k = k.view(B, T, self.n_kv_head, self.head_dim)
         v = v.view(B, T, self.n_kv_head, self.head_dim)
@@ -78,32 +86,32 @@ class QwenGroupedQueryAttention(nn.Module):
         # FlashAttention
         y = F.scaled_dot_product_attention(q, k, v, is_causal=True)
         y = y.transpose(1, 2).contiguous().reshape(B, T, hidden)
-        y = self.c_proj(y)
+        y = self.o_proj(y)
         return y
 
 class MLP(nn.Module):
 
     def __init__(self, config):
         super().__init__()
-        self.w1 = nn.Linear(config.n_embd, config.n_embd*4, bias=False)
-        self.w2 = nn.Linear(config.n_embd*4, config.n_embd, bias=False)
-        self.w3 = nn.Linear(config.n_embd, config.n_embd*4, bias=False)
+        self.gate_proj = nn.Linear(config.n_embd, config.n_inter, bias=False)
+        self.down_proj = nn.Linear(config.n_inter, config.n_embd, bias=False)
+        self.up_proj = nn.Linear(config.n_embd, config.n_inter, bias=False)
     
     def forward(self, x):
-        return self.w2(F.silu(self.w1(x)) * self.w3(x))
+        return self.down_proj(F.silu(self.gate_proj(x)) * self.up_proj(x))
 
 class Block(nn.Module):
 
     def __init__(self, config):
         super().__init__()
-        self.rms1 = RMSNorm(config.n_embd)
-        self.attn = QwenGroupedQueryAttention(config)
-        self.rms2 = RMSNorm(config.n_embd)
-        self.ffn = MLP(config)
+        self.input_layernorm = RMSNorm(config.n_embd)
+        self.self_attn = QwenGroupedQueryAttention(config)
+        self.post_attention_layernorm = RMSNorm(config.n_embd)
+        self.mlp = MLP(config)
     
     def forward(self, x, freqs_cis):
-        x = x + self.attn(self.rms1(x), freqs_cis)
-        x = x + self.ffn(self.rms2(x))
+        x = x + self.self_attn(self.input_layernorm(x), freqs_cis)
+        x = x + self.mlp(self.post_attention_layernorm(x))
         return x
 
 class Qwen(nn.Module):
@@ -111,15 +119,16 @@ class Qwen(nn.Module):
     def __init__(self, config, process_rank):
         super().__init__()
         self.config = config
-        self.transformer = nn.ModuleDict(dict(
-            wte = nn.Embedding(config.vocab_size, config.n_embd),
-            h = nn.ModuleList([Block(config) for _ in range(config.n_layer)]),
-            ln_f = RMSNorm(config.n_embd),
+        self.model = nn.ModuleDict(dict(
+            embed_tokens = nn.Embedding(config.vocab_size, config.n_embd, config.pad_token_id),
+            layers = nn.ModuleList([Block(config) for _ in range(config.n_layer)]),
+            norm = RMSNorm(config.n_embd),
         ))
         # decode head
         self.lm_head = nn.Linear(config.n_embd, config.vocab_size, bias=False)
         # weight sharing following gpt-2, Qwen did not implement this
-        self.transformer.wte.weight = self.lm_head.weight
+        if config.weight_sharing:
+            self.model.embed_tokens.weight = self.lm_head.weight
         self.register_buffer("freqs_cis", precompute_freqs_cis(config), persistent=False)
         self.master_process = process_rank == 0
         self.apply(self._init_weights)
@@ -140,12 +149,12 @@ class Qwen(nn.Module):
 
         # tokenize
         # (B, T) -> (B, T, n_embd)
-        x = self.transformer.wte(idx)
+        x = self.model.embed_tokens(idx)
         # encode
-        for block in self.transformer.h:
+        for block in self.model.layers:
             x = block(x, self.freqs_cis[:T])
         # norm
-        x = self.transformer.ln_f(x)
+        x = self.model.norm(x)
         # decode
         # (B, T, n_embd) -> (B, T, vocab_size)
         logits = self.lm_head(x)
@@ -155,6 +164,26 @@ class Qwen(nn.Module):
             # targets: (B, T) -> (B*T,)
             loss = F.cross_entropy(logits.view(-1, logits.size(-1)), targets.view(-1))
         return logits, loss
+
+    @classmethod
+    def from_pretrained(cls, config, model_type, process_rank):
+        assert "Qwen" in model_type
+        model = Qwen(config, process_rank)
+        sd = model.state_dict()
+        sd_keys = sd.keys()
+        sd_keys = [k for k in sd_keys if not k.endswith("freqs_cis")]
+
+        from transformers import AutoModelForCausalLM
+        model_hf = AutoModelForCausalLM.from_pretrained(model_type)
+        sd_hf = model_hf.state_dict()
+        sd_hf_keys = sd_hf.keys()
+
+        assert len(sd_hf_keys) == len(sd_keys), f"mismatched keys: {len(sd_hf_keys)} != {len(sd_keys)}"
+        for k in sd_hf_keys:
+            assert sd[k].shape == sd_hf[k].shape
+            with torch.no_grad():
+                sd[k].copy_(sd_hf[k])
+        return model
 
     def configure_optimizers(self, weight_decay, learning_rate, device_type):
         param_dict = {pn: p for pn, p in self.named_parameters()}

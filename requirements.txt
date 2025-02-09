@@ -3,8 +3,10 @@ datasets
 tiktoken
 matplotlib
 torch==2.5.1
-transformers==4.46.3
+transformers==4.48.3
 safetensors==0.4.5
+trl
+peft
 
 #python_dateutil
 #flash_attn

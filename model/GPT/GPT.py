@@ -145,7 +145,7 @@ class GPT(nn.Module):
 
 
     @classmethod
-    def from_pretrained(cls, model_type):
+    def from_pretrained(config, model_type, process_rank):
         assert model_type in {'gpt2', 'gpt2-medium', 'gpt2-large', 'gpt2-xl'}
         from transformers import GPT2LMHeadModel
 
@@ -157,11 +157,13 @@ class GPT(nn.Module):
             'gpt2-large':   dict(n_layer=36, n_head=20, n_embd=1280), # 124M params
             'gpt2-xl':      dict(n_layer=48, n_head=25, n_embd=1600), # 124M params
         }[model_type]
-        config_args['vocab_size'] = 50257
-        config_args['block_size'] = 1024
-
-        config = GPTConfig(**config_args)
-        model = GPT(config)
+        config.n_layer = config_args[model_type]["n_layer"]
+        config.n_layer = config_args[model_type]["n_head"]
+        config.n_layer = config_args[model_type]["n_embd"]
+        #config_args['vocab_size'] = 50257
+        #config_args['block_size'] = 1024
+        #config = GPTConfig(**config_args)
+        model = GPT(config, process_rank)
         sd = model.state_dict()
         sd_keys = sd.keys()
         sd_keys = [k for k in sd_keys if not k.endswith('.attn.bias')]
