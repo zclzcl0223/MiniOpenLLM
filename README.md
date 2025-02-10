@@ -12,6 +12,12 @@ Simple implementation of some open source LLMs, including:
 </p>
 
 <p style="text-align: center;">
+    <img src="fig/sft.png" width="100%" />
+    <br>
+    <em>SFT (Qwen2.5-0.5B-Instruct)</em>
+</p>
+
+<p style="text-align: center;">
     <img src="fig/reward.png" width="100%" />
     <br>
     <em>GRPO (Qwen2.5-0.5B-Instruct)</em>
@@ -36,7 +42,7 @@ Run `python fineweb.py` to obtain `FineWeb-edu-10B` dataset.
 ## Eval: Hellaswag
 Run `python hellaswag.py` to obtain `hellaswag` dataset, which serves as a benchmark for evaluating the model's capability more intuitively using accuracy (from random selection, 25\% acc, to being able to make some correct choices).
 
-## GRPO: GSM8K
+## SFT & GRPO: GSM8K
 
 From [openai/gsm8k](https://huggingface.co/datasets/openai/gsm8k), which contains 8.5K high quality linguistically diverse grade school math word problems.
 
@@ -61,15 +67,21 @@ to get the visualization of training dynamics.
 
 ### SFT
 
-TODO
+Currently using `SFTTrainer`:
+
+```bash
+bash scripts/run_sft.sh
+```
 
 ### GRPO
 
-Currently using the implementation in trl:
+Currently using `GRPOTrainer`:
 
 ```bash
 bash scripts/run_grpo.sh
 ```
+
+> `tensorboard --logdir=output_dir/runs/CURRENT_DATETIME_HOSTNAME` to check the loss when using `Trainer` of `transformers` or `trl`.
 
 # Reference
 
