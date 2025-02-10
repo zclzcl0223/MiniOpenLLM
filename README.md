@@ -14,7 +14,7 @@ Simple implementation of some open source LLMs, including:
 <p style="text-align: center;">
     <img src="fig/sft.png" width="100%" />
     <br>
-    <em>SFT (Qwen2.5-0.5B-Instruct)</em>
+    <em>SFT (Qwen2.5-0.5B)</em>
 </p>
 
 <p style="text-align: center;">
