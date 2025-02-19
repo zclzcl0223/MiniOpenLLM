@@ -1,5 +1,6 @@
 **/__pycache__/
 
+*.txt
 *.pyc
 *.pyo
 *.pyd
@@ -9,5 +10,7 @@ edu_fineweb10B/
 hellaswag/
 
 log/
+
+outputs/
 
 run2.sh
