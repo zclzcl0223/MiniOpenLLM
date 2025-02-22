@@ -29,6 +29,8 @@ Simple implementation of some open source LLMs, including:
 Install the required packages with the following command:
 ```bash
 conda create -n miniopenllm python=3.10
+conda activate miniopenllm
+conda install cuda-nvcc
 pip install -r requirements.txt
 ```
 
@@ -55,7 +57,7 @@ bash scripts/run.sh
 ```
 to train the specific model.
 
-> Reduce `batch_size` if OOM.
+> Reduce `batch_size` if OOM or run `bash scripts/run_accelerate.sh` to enable `ZeRO`.
 
 ```bash
 python visual.py

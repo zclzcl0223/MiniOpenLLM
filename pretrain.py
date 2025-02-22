@@ -205,7 +205,7 @@ def main(model, config):
                         torch.save(checkpoint, checkpoint_path)
 
             # eval on hellaswag
-            if step % 250 == 0 and step !=0 or (step == max_steps - 1):
+            if step % 250 == 0 or (step == max_steps - 1):
                 num_correct_norm = 0
                 num_total = 0
                 model_for_eval = raw_model
