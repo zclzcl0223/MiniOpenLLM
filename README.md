@@ -65,7 +65,7 @@ python visual.py
 
 to get the visualization of training dynamics.
 
-## Postrain
+## Posttrain
 
 ### SFT
 
