@@ -135,7 +135,6 @@ def main(model, config):
     min_lr = max_lr * 0.1
     warmup_steps = config.warmup_steps  # 375M / 2**19
     max_steps = config.max_steps  # 10B / 2**19
-    total_steps = config.total_steps
 
     # real vocab_size: 50257
     model = model(config, process_rank=ddp_rank)
@@ -171,7 +170,7 @@ def main(model, config):
             with open(log_file, "w") as f: # clear log
                 pass
     
-        progress_bar = tqdm(range(global_step, total_steps), disable=not accelerator.is_local_main_process)
+        progress_bar = tqdm(range(global_step, max_steps), disable=not accelerator.is_local_main_process)
         progress_bar.set_description("Steps")
 
         def evaluate():
@@ -194,7 +193,7 @@ def main(model, config):
                     f.write(f"{global_step} val {val_loss_accum.item():.4f}\n")
 
             # save checkpoint
-            if global_step > 0 and (global_step % 2500 == 0 or global_step == total_steps - 1):
+            if global_step > 0 and (global_step % 2500 == 0 or global_step == max_steps - 1):
                 accelerator.save_state()
                 # save the final model
                 accelerator.save_model(model, max_shard_size='500MB', save_directory=log_dir)
@@ -231,7 +230,7 @@ def main(model, config):
         t0 = time.time()
         loss_accum = 0.0
         gradient_accumulation_step = 0
-        while global_step < total_steps:
+        while global_step < max_steps:
             # gradient accumulation
             for i, batch in enumerate(train_loader):
                 model.train()
@@ -253,17 +252,17 @@ def main(model, config):
                     tokens_per_sec = (tokens_processed) / (t1 - t0)                    
                     progress_bar.update(1)
                     if accelerator.is_main_process:
-                        tqdm.write(f"step {global_step:5d} | loss: {loss_accum.item():.6f} | lr {scheduler.get_last_lr()[0]:.4e} | norm: {norm:.4f} | dt: {dt:.2f}ms | tok/sec: {tokens_per_sec:.2f} | left time: {dt/1000*(total_steps-global_step-1):.2f}s")
+                        tqdm.write(f"step {global_step:5d} | loss: {loss_accum.item():.6f} | lr {scheduler.get_last_lr()[0]:.4e} | norm: {norm:.4f} | dt: {dt:.2f}ms | tok/sec: {tokens_per_sec:.2f} | left time: {dt/1000*(max_steps-global_step-1):.2f}s")
                         with open(log_file, "a") as f:
                             f.write(f"{global_step} train {loss_accum.item():.6f}\n")
                     t0 = time.time()
                     loss_accum = 0.0
                     gradient_accumulation_step = 0
                     global_step += 1
-                    if global_step % 250 == 0 or (global_step == total_steps - 1):
+                    if global_step % 250 == 0 or (global_step == max_steps - 1):
                         evaluate()
                         model.train()
-                    if global_step >= total_steps:
+                    if global_step >= max_steps:
                         break
     else:
         # generate some examples
