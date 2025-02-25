@@ -65,7 +65,7 @@ def main(model, config):
     ddp = int(os.environ.get('RANK', -1)) != -1 # ddp run
 
     if ddp:
-        assert torch.cuda.is_available(), "for now i think we need CUDA for DDP"
+        assert torch.cuda.is_available(), "we need CUDA for DDP"
         init_process_group(backend='nccl')
         ddp_rank = int(os.environ['RANK'])
         ddp_local_rank = int(os.environ['LOCAL_RANK'])
