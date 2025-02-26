@@ -10,3 +10,4 @@ peft
 tensorboard
 accelerate
 deepspeed
+pybind11
