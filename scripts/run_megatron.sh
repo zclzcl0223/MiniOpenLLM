@@ -68,6 +68,7 @@ TRAINING_ARGS=(
     --min-lr 1.0e-4
     --lr-warmup-iters 715
     --lr-decay-iters 19200 
+    --no-gradient-accumulation-fusion
 )
 
 MODEL_PARALLEL_ARGS=(
