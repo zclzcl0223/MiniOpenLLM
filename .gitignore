@@ -1,6 +1,7 @@
 **/__pycache__/
 
 *.txt
+!gpt2_vocab/merges.txt.txt
 *.pyc
 *.pyo
 *.pyd
