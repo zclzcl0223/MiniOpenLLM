@@ -1,8 +1,8 @@
-export CUDA_VISIBLE_DEVICES=0
+export CUDA_VISIBLE_DEVICES=0,1
 
 export CUDA_DEVICE_MAX_CONNECTIONS=1
 
-GPUS_PER_NODE=1
+GPUS_PER_NODE=2
 
 # Change for multinode config
 MASTER_ADDR=localhost
@@ -15,7 +15,19 @@ CHECKPOINT_PATH=log/Qwen_megatron
 TENSORBOARD_LOGS_PATH=log/Qwen_megatron #<Specify path>
 VOCAB_FILE=gpt2_vocab/vocab.json #<Specify path to file>/gpt2-vocab.json
 MERGE_FILE=gpt2_vocab/merges.txt #<Specify path to file>/gpt2-merges.txt
-DATA_PATH=edu_fineweb10B #<Specify path and file prefix>_text_document
+#<Specify path and file prefix>_text_document
+TRAIN_PATH=''
+for i in {1..99}; do
+  TRAIN_PATH+=" 1.0 edu_fineweb10B_megatron/$(printf "%d" $i)_text_document"
+done
+
+VAL_PATH='
+1.0
+edu_fineweb10B_megatron/100_text_document'
+
+# DATA_PATH='\
+# 1.0
+# edu_fineweb10B_megatron/1_text_document'
 
 DISTRIBUTED_ARGS=(
     --nproc_per_node $GPUS_PER_NODE 
@@ -25,7 +37,7 @@ DISTRIBUTED_ARGS=(
 )
 
 MODEL_ARGS=(
-    --num-layers 12 
+    --num-layers 10 
     --hidden-size 768 
     --ffn-hidden-size 3072 
     --num-attention-heads 12 
@@ -35,7 +47,7 @@ MODEL_ARGS=(
     --disable-bias-linear 
     --seq-length 1024 
     --group-query-attention 
-    --num-query-groups 6 
+    --num-query-groups 2 
     --max-position-embeddings 1024 
     --position-embedding-type rope 
     --rotary-base 10000
@@ -54,8 +66,8 @@ REGULARIZATION_ARGS=(
 )
 
 TRAINING_ARGS=(
-    --micro-batch-size 16 
-    --global-batch-size 16 
+    --micro-batch-size 32 
+    --global-batch-size 512 
     --train-iters 20000 
     --adam-beta1 0.9 
     --adam-beta2 0.95 
@@ -68,11 +80,12 @@ TRAINING_ARGS=(
     --min-lr 1.0e-4
     --lr-warmup-iters 715
     --lr-decay-iters 19200 
-    --no-gradient-accumulation-fusion
+    --no-gradient-accumulation-fusion 
+    --no-masked-softmax-fusion 
 )
 
 MODEL_PARALLEL_ARGS=(
-	--tensor-model-parallel-size 1 
+	--tensor-model-parallel-size 2 
 	--pipeline-model-parallel-size 1 
     --transformer-impl local
 )
@@ -85,12 +98,12 @@ TOKENIZER_ARGS=(
 )
 
 DATA_ARGS=(
-    --data-path $DATA_PATH 
-    --split 99,1,0
+    --train-data-path $TRAIN_PATH 
+    --valid-data-path $VAL_PATH 
 )
 
 EVAL_AND_LOGGING_ARGS=(
-    --log-interval 100
+    --log-interval 1
     --save-interval 2500 
     --eval-interval 250 
     --save $CHECKPOINT_PATH 

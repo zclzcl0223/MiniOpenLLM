@@ -59,6 +59,8 @@ to train the specific model.
 
 > Reduce `batch_size` if OOM or run `bash scripts/run_accelerate.sh` to enable `ZeRO`.
 
+`Megatron` training is now enabled, including pp, dp, tp... Run `bash data_preprocessing_megatron.sh` to get the `fineweb` dataset for training and `bash scripts/run_megatron.sh` to train the model. The default model is `Qwen`.
+
 ```bash
 python visual.py
 ```
