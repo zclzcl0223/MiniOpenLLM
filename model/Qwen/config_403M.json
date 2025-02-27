@@ -1,0 +1,19 @@
+{
+    "bos_token_id": 50303,
+    "eos_token_id": 50303,
+    "pad_token_id": 50303,
+    "block_size": 1024,
+    "vocab_size": 50304,
+    "n_layer": 24,
+    "n_head": 14,
+    "kv_group": 7 ,
+    "n_embd": 896,
+    "n_inter": 4864,
+    "base": 10000.0,
+    "batch_size": 16,
+    "token_per_epoch": 524288,
+    "max_lr": 1e-3,
+    "warmup_steps": 715,
+    "max_steps": 19073,
+    "weight_sharing": 1
+  }
