@@ -61,14 +61,16 @@ for model_type in models:
             plt.axhline(y=loss_baseline, color='r', linestyle='--', label=f"OpenAI GPT-2 ({sz}) checkpoint val loss")
         xs, ys = streams_xy["train"] # training loss
         ys = np.array(ys)
-        plt.plot(xs, ys, label=f'nano{model_type.lower()} ({param_count}) train loss')
+
+        plt.plot(xs, ys, label=f'{model_type.lower()} ({param_count}) train loss')
         print("Min Train Loss:", min(ys))
         xs, ys = streams_xy["val"] # validation loss
-        plt.plot(xs, ys, label=f'nano{model_type.lower()} ({param_count}) val loss')
-        plt.xlabel("steps")
-        plt.ylabel("loss")
+        plt.plot(xs, ys, label=f'{model_type.lower()} ({param_count}) val loss')
+        plt.xlabel("steps", fontsize=12)
+        plt.ylabel("loss", fontsize=12)
         plt.yscale('log')
         plt.ylim(top=6.0)
+        plt.gca().tick_params(axis='both', which='major', labelsize=11)
         plt.legend()
         plt.title("Loss")
         print("Min Validation Loss:", min(ys))
@@ -82,9 +84,10 @@ for model_type in models:
             plt.axhline(y=hella3_baseline, color='g', linestyle='--', label=f"OpenAI GPT-3 ({sz}) checkpoint")
         xs, ys = streams_xy["hella"] # HellaSwag eval
         ys = np.array(ys)
-        plt.plot(xs, ys, label=f"nano{model_type.lower()} ({param_count})")
-        plt.xlabel("steps")
-        plt.ylabel("accuracy")
+        plt.plot(xs, ys, label=f"{model_type.lower()} ({param_count})")
+        plt.xlabel("steps", fontsize=12)
+        plt.ylabel("accuracy", fontsize=12)
+        plt.gca().tick_params(axis='both', which='major', labelsize=11)
         plt.legend()
         plt.title("HellaSwag eval")
         print("Max Hellaswag eval:", max(ys), "\n")
@@ -126,11 +129,13 @@ for model_type in models:
         if loss_baseline is not None and draw_baseline:
             plt.axhline(y=loss_baseline, color='r', linestyle='--', label=f"OpenAI GPT-2 ({sz}) checkpoint val loss")
         xs, ys = streams_xy["val"] # validation loss
-        plt.plot(xs, ys, label=f'nano{model_type.lower()} ({param_count}) val loss')
-        plt.xlabel("steps")
-        plt.ylabel("loss")
+        plt.plot(xs, ys, label=f'{model_type.lower()} ({param_count}) val loss')
+        plt.xlabel("steps", fontsize=12)
+        plt.ylabel("loss", fontsize=12)
         plt.yscale('log')
-        plt.ylim(top=4.0)
+        plt.ylim(top=4.0, bottom=2.5)
+        plt.grid(True)
+        plt.gca().tick_params(axis='both', which='major', labelsize=11)
         plt.legend()
         plt.title("Loss")
 
@@ -144,9 +149,11 @@ for model_type in models:
             draw_baseline = False
         xs, ys = streams_xy["hella"] # HellaSwag eval
         ys = np.array(ys)
-        plt.plot(xs, ys, label=f"nano{model_type.lower()} ({param_count})")
-        plt.xlabel("steps")
-        plt.ylabel("accuracy")
+        plt.plot(xs, ys, label=f"{model_type.lower()} ({param_count})")
+        plt.xlabel("steps", fontsize=12)
+        plt.ylabel("accuracy", fontsize=12)
+        plt.grid(True)
+        plt.gca().tick_params(axis='both', which='major', labelsize=11)
         plt.legend()
         plt.title("HellaSwag eval")
 plt.savefig(f'fig/loss_all.png')
