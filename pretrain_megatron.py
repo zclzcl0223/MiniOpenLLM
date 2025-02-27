@@ -31,11 +31,10 @@ from megatron.core.models.gpt.gpt_layer_specs import (
     get_gpt_layer_local_spec,
     get_gpt_layer_with_transformer_engine_spec,
 )
-from model.Qwen_megatron.Qwen import Qwen
 
 stimer = StragglerDetector()
 
-def model_provider(pre_process=True, post_process=True) -> Qwen:
+def model_provider(pre_process=True, post_process=True):
     args = get_args()
     use_te = args.transformer_impl == 'transformer_engine'
 
