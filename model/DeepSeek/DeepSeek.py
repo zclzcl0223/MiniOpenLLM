@@ -54,13 +54,13 @@ class MultiHeadLatentAttention(nn.Module):
         self.qk_head_dim = config.qk_nope_head_dim + config.qk_rope_head_dim
         self.v_head_dim = config.v_head_dim
 
-        self.latent_proj = nn.Linear(config.n_embd, self.q_lora_rank+self.kv_lora_rank+self.qk_rope_head_dim)
+        self.latent_proj = nn.Linear(config.n_embd, self.q_lora_rank+self.kv_lora_rank+self.qk_rope_head_dim, bias=False)
         self.q_norm = RMSNorm(self.q_lora_rank)
-        self.q_up_proj = nn.Linear(self.q_lora_rank, self.n_head * self.qk_head_dim)
+        self.q_up_proj = nn.Linear(self.q_lora_rank, self.n_head * self.qk_head_dim, bias=False)
         self.kv_norm = RMSNorm(self.kv_lora_rank)
-        self.kv_up_proj = nn.Linear(self.kv_lora_rank, self.n_head * (self.qk_nope_head_dim + self.v_head_dim))
+        self.kv_up_proj = nn.Linear(self.kv_lora_rank, self.n_head * (self.qk_nope_head_dim + self.v_head_dim), bias=False)
 
-        self.c_proj = nn.Linear(config.n_embd, config.n_embd)
+        self.c_proj = nn.Linear(config.n_embd, config.n_embd, bias=False)
 
     def forward(self, x, freqs_cis):
         B, T, hidden = x.shape
@@ -100,9 +100,9 @@ class MLP(nn.Module):
 
     def __init__(self, config, inter_dim):
         super().__init__()
-        self.w1 = nn.Linear(config.n_embd, inter_dim)
-        self.w2 = nn.Linear(inter_dim, config.n_embd)
-        self.w3 = nn.Linear(config.n_embd, inter_dim)
+        self.w1 = nn.Linear(config.n_embd, inter_dim, bias=False)
+        self.w2 = nn.Linear(inter_dim, config.n_embd, bias=False)
+        self.w3 = nn.Linear(config.n_embd, inter_dim, bias=False)
 
     def forward(self, x):
         return self.w2(F.silu(self.w1(x)) * self.w3(x)), None
@@ -111,9 +111,9 @@ class MLP_Expert(nn.Module):
 
     def __init__(self, config, inter_dim):
         super().__init__()
-        self.w1 = nn.Linear(config.n_embd, inter_dim)
-        self.w2 = nn.Linear(inter_dim, config.n_embd)
-        self.w3 = nn.Linear(config.n_embd, inter_dim)
+        self.w1 = nn.Linear(config.n_embd, inter_dim, bias=False)
+        self.w2 = nn.Linear(inter_dim, config.n_embd, bias=False)
+        self.w3 = nn.Linear(config.n_embd, inter_dim, bias=False)
 
     def forward(self, x):
         return self.w2(F.silu(self.w1(x)) * self.w3(x))
