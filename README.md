@@ -103,7 +103,7 @@ Andrej Karpathy](https://youtu.be/l8pRSuU81PU?si=pxV-eImnqCi2ID1O)
 - [Github repo: build-nanogpt](https://github.com/karpathy/build-nanogpt)
 - [Github repo: minigpt](https://github.com/victorbjorsvik/minigpt)
 
-> I strongly recommend watching **"Let's reproduce GPT-2 (124M)"**, which provides a step-by-step guide to implementing GPT-2 from scratch, covering key concepts such as the Transformer architecture, training procedures, and optimization techniques, and which serves as the foundation for this repository.
+> I strongly recommend watching **"Let's reproduce GPT-2 (124M)"**, which implements GPT-2 from scratch step-by-step, covering key concepts such as the Transformer architecture, training procedures, and optimization techniques, and which serves as the foundation for this repository.
 
 ## DeepSeek-V3
 
